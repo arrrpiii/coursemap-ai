@@ -1,9 +1,11 @@
 // Lightweight fetch wrapper used by all API modules.
 
-// In dev, Vite proxies `/api` to http://localhost:8000 (see vite.config.js).
-// In production, set VITE_API_URL to the deployed backend origin, e.g.
-//   VITE_API_URL=https://coursemap-ai-backend.onrender.com
-const BASE = import.meta.env.VITE_API_URL || "/api";
+// API call sites pass paths like "/auth/login" — never with the /api prefix.
+// In dev, Vite proxies `/api/*` to http://localhost:8000 (see vite.config.js).
+// In production, set VITE_API_URL to the deployed backend ORIGIN (no /api
+// suffix), e.g. VITE_API_URL=https://coursemap-ai-backend.onrender.com — the
+// /api prefix is appended here automatically.
+const BASE = (import.meta.env.VITE_API_URL || "") + "/api";
 const TOKEN_KEY = "coursemap_token";
 
 function authHeaders() {
