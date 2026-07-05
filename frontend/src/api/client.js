@@ -1,6 +1,10 @@
 // Lightweight fetch wrapper used by all API modules.
 
-const BASE = "/api";
+// In dev, Vite proxies "/api/*" to the local FastAPI server.
+// In prod, set VITE_API_BASE (e.g. https://api.example.com) and we
+// append "/api" to point at the deployed backend.
+const API_ORIGIN = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
+const BASE = `${API_ORIGIN}/api`;
 const TOKEN_KEY = "coursemap_token";
 
 function authHeaders() {
