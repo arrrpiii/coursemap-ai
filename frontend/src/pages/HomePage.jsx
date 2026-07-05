@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { listCourses } from "../api/coursesApi.js";
@@ -19,9 +19,9 @@ const FEATURES = [
   },
   {
     icon: "⌬",
-    title: "Adaptive Notes",
-    desc: "Generate notes in 4 styles — simple, detailed, exam-focused, or bullet — on demand.",
-    tag: "Notes · 4 styles",
+    title: "Concept Explainer",
+    desc: "Ask Gemini to explain any node using the full syllabus and your saved notes as context.",
+    tag: "Explain · Node",
   },
   {
     icon: "▣",
@@ -77,14 +77,6 @@ export default function HomePage() {
     };
   }, []);
 
-  const stats = useMemo(() => {
-    return [
-      { value: courses.length, label: "Active courses" },
-      { value: "12.4k+", label: "Topics mapped" },
-      { value: "98%", label: "Parse accuracy" },
-    ];
-  }, [courses.length]);
-
   return (
     <div>
       <motion.section
@@ -95,22 +87,12 @@ export default function HomePage() {
       >
         <div className="hero-grid">
           <div>
-            <motion.div
-              className="eyebrow"
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={0}
-            >
-              <span style={{ color: "var(--green)" }}>●</span> System online · Gemini 2.5 Flash
-            </motion.div>
-
             <motion.h1
               className="hero-title"
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              custom={1}
+              custom={0}
             >
               Turn any syllabus into a navigable neural map.
             </motion.h1>
@@ -120,12 +102,11 @@ export default function HomePage() {
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              custom={2}
+              custom={1}
             >
               CourseMap AI is an AI-assisted learning co-pilot. Drop a course
-              title, paste a syllabus, and watch a topic tree, tutor chat,
-              adaptive notes, and exam-ready question papers materialise — all
-              in seconds.
+              title, paste a syllabus, and watch a topic tree, tutor chat, and
+              exam-ready question papers materialise — all in seconds.
             </motion.p>
 
             <motion.div
@@ -133,7 +114,7 @@ export default function HomePage() {
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              custom={3}
+              custom={2}
             >
               <Link
                 to="/course/new"
@@ -145,21 +126,6 @@ export default function HomePage() {
               <a href="#features" className="secondary" style={{ textDecoration: "none" }}>
                 Explore features ↓
               </a>
-            </motion.div>
-
-            <motion.div
-              className="hero-stats"
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={4}
-            >
-              {stats.map((s) => (
-                <div className="hero-stat" key={s.label}>
-                  <strong>{s.value}</strong>
-                  <span>{s.label}</span>
-                </div>
-              ))}
             </motion.div>
           </div>
 
