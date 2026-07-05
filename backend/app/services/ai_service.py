@@ -94,10 +94,16 @@ def _call_gemini_raw(
     the SDK then guarantees parseable JSON, which dramatically reduces
     the need for downstream retries. Raises ``LLMUnavailable`` on any
     error the caller can act on.
+
+    Note: ``timeout`` is NOT a field of ``GenerateContentConfig`` in the
+    google-genai SDK — it lives on ``HttpOptions`` instead.
     """
     try:
         client = _get_client()
-        config_kwargs: dict = {"temperature": temperature, "timeout": timeout}
+        config_kwargs: dict = {
+            "temperature": temperature,
+            "http_options": types.HttpOptions(timeout=int(timeout * 1000)),
+        }
         if response_mime_type:
             config_kwargs["response_mime_type"] = response_mime_type
         response = client.models.generate_content(

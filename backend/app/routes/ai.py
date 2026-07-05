@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
 from app.ai_flows.explanation import explain_node
-from app.ai_flows.questions import generate_questions
-from app.ai_flows.sample_paper import generate_sample_paper
+from app.ai_flows.questions import generate_questions as ai_generate_questions
+from app.ai_flows.sample_paper import generate_sample_paper as ai_generate_sample_paper
 from app.models.ai_models import (
     VALID_DIFFICULTIES,
     VALID_QUESTION_TYPES,
@@ -116,7 +116,7 @@ async def generate_questions(
     ctx = await _load_node_context(db, course_id, node_id, user_id)
 
     try:
-        result = generate_questions(
+        result = ai_generate_questions(
             course_title=ctx["course"].get("title", ""),
             syllabus=ctx["course"].get("syllabus", ""),
             outline=ctx["outline"],
@@ -207,7 +207,7 @@ async def generate_sample_paper(
     outline = await course_service.get_course_outline_text(db, course_oid)
 
     try:
-        result = generate_sample_paper(
+        result = ai_generate_sample_paper(
             course_title=course.get("title", ""),
             syllabus=course.get("syllabus", ""),
             course_tree=outline or "(no tree available)",
