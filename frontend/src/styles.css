@@ -1372,7 +1372,14 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-family: v
   margin-bottom: 10px;
 }
 /* Sample paper stacking: breathing room between the heading card
-   and the first section, and between subsequent sections. */
+   and the first section, and between subsequent sections.
+   The wrapper itself is bounded with internal scrolling so a long
+   paper doesn't push the whole page down indefinitely. */
+.sample-paper {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px; /* room for the scrollbar so content doesn't shift */
+}
 .sample-paper > .card { margin-bottom: 16px; }
 .sample-paper > .card + .sample-section { margin-top: 0; }
 .sample-paper > .sample-section + .sample-section { margin-top: 12px; }
@@ -1514,7 +1521,13 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-family: v
   font-size: 14px;
 }
 .history-item.expanded .history-item-chevron { transform: rotate(90deg); }
-.history-item-body { padding: 0 14px 14px; }
+/* Expanded history body: bound the height so opening one item with a
+   long sample-paper / question-set doesn't blow up the page. */
+.history-item-body {
+  padding: 0 14px 14px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
 
 /* ---------- Syllabus box ---------- */
 .syllabus-box {
