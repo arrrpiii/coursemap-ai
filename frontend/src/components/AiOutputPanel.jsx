@@ -5,6 +5,7 @@
 // independently.
 
 import { useState } from "react";
+import renderMarkdown from "../utils/markdown.jsx";
 
 function useRevealed(count, initialAllRevealed) {
   const [revealed, setRevealed] = useState(() => {
@@ -34,7 +35,8 @@ function AnswerBlock({ answer, isRevealed, onToggle }) {
       <div className="q-answer-content">
         {isRevealed ? (
           <div className="q-answer">
-            <strong>Answer:</strong> {answer}
+            <strong>Answer:</strong>{" "}
+            {renderMarkdown(answer)}
           </div>
         ) : (
           <div className="q-answer-hidden">Answer hidden — click reveal</div>
@@ -65,7 +67,7 @@ function QuestionsList({ output, showAnswers }) {
         <div key={i} className="question-item">
           <div className="q-line">
             <div className="q-text">
-              {i + 1}. {q.question}
+              {i + 1}. {renderMarkdown(q.question)}
             </div>
             <span className="q-meta">
               {q.type} · {q.difficulty}
@@ -74,7 +76,7 @@ function QuestionsList({ output, showAnswers }) {
           {q.type === "mcq" && q.options && q.options.length > 0 && (
             <ul className="q-options">
               {q.options.map((opt, j) => (
-                <li key={j}>{opt}</li>
+                <li key={j}>{renderMarkdown(opt)}</li>
               ))}
             </ul>
           )}
@@ -113,7 +115,9 @@ function SamplePaper({ output, showAnswers }) {
         <div key={si} className="sample-section">
           <h4>{section.name}</h4>
           {section.instructions && (
-            <div className="instructions">{section.instructions}</div>
+            <div className="instructions">
+              {renderMarkdown(section.instructions)}
+            </div>
           )}
           <ol>
             {(section.questions || []).map((q, qi) => {
@@ -122,7 +126,7 @@ function SamplePaper({ output, showAnswers }) {
               );
               return (
                 <li key={qi}>
-                  {q.question}
+                  {renderMarkdown(q.question)}
                   <span className="marks">[{q.marks} marks]</span>
                   <AnswerBlock
                     answer={q.answer}
