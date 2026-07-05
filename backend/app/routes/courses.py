@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
-from app.langgraph_flows.course_tree_flow import run_course_tree_flow
+from app.ai_flows.course_tree import generate_course_tree
 from app.models.course_models import CourseCreateRequest
 from app.routes.auth import get_current_user
 from app.services import course_service
@@ -24,7 +24,7 @@ async def create_course(
     root_id = await course_service.create_root_node(db, course_oid, payload.title)
 
     try:
-        tree_payload = run_course_tree_flow(payload.title, payload.syllabus)
+        tree_payload = generate_course_tree(payload.title, payload.syllabus)
         topics = tree_payload.get("topics", []) if tree_payload else []
         await course_service.save_generated_tree(db, course_oid, root_id, topics)
     except Exception as exc:  # noqa: BLE001

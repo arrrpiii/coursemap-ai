@@ -1,53 +1,6 @@
-"""LangGraph flow that produces a context-aware explanation for a node.
-
-The prompt includes:
-  - the full course description (syllabus)
-  - the entire list of topics and subtopics in the course
-  - the title of the selected node and its parent topic
-  - the student's free-form question
-"""
-
-from typing import TypedDict
-
-from langgraph.graph import END, StateGraph
+"""Explain a single course node using the full syllabus + outline + history."""
 
 from app.services.ai_service import generate_text
-
-
-class FlowState(TypedDict, total=False):
-    prompt: str
-    content: str
-    error: str
-
-
-def prepare_input(state: FlowState) -> FlowState:
-    return state
-
-
-def call_gemini(state: FlowState) -> FlowState:
-    text = generate_text(state.get("prompt", ""))
-    return {**state, "content": text}
-
-
-def validate_output(state: FlowState) -> FlowState:
-    if not state.get("content"):
-        raise RuntimeError(state.get("error") or "No explanation generated")
-    return state
-
-
-def build_graph():
-    workflow = StateGraph(FlowState)
-    workflow.add_node("prepare_input", prepare_input)
-    workflow.add_node("call_gemini", call_gemini)
-    workflow.add_node("validate_output", validate_output)
-    workflow.set_entry_point("prepare_input")
-    workflow.add_edge("prepare_input", "call_gemini")
-    workflow.add_edge("call_gemini", "validate_output")
-    workflow.add_edge("validate_output", END)
-    return workflow.compile()
-
-
-_compiled = build_graph()
 
 
 EXPLANATION_PROMPT = """You are an academic tutor.
@@ -108,7 +61,7 @@ def _format_history(history: list) -> str:
     return "\n".join(lines) if lines else "(no prior conversation — this is the first turn)"
 
 
-def run_explanation_flow(
+def explain_node(
     *,
     course_title: str,
     syllabus: str,
@@ -119,6 +72,7 @@ def run_explanation_flow(
     user_query: str,
     history: list | None = None,
 ) -> str:
+    """Return a free-text explanation of a node. Empty string on failure."""
     prompt = EXPLANATION_PROMPT.format(
         course_title=course_title,
         syllabus=syllabus,
@@ -129,5 +83,4 @@ def run_explanation_flow(
         history=_format_history(history or []),
         user_query=user_query,
     )
-    result = _compiled.invoke({"prompt": prompt})
-    return result.get("content", "")
+    return generate_text(prompt)

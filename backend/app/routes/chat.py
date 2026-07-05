@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.db import get_db
-from app.langgraph_flows.explanation_flow import run_explanation_flow
+from app.ai_flows.explanation import explain_node
 from app.routes.auth import get_current_user
 from app.services import chat_service, course_service, node_service
 from app.utils import to_object_id
@@ -110,7 +110,7 @@ async def send_chat_message(
         prompt_history = prompt_history[:-1]
 
     try:
-        assistant_text = run_explanation_flow(
+        assistant_text = explain_node(
             course_title=ctx["course"].get("title", ""),
             syllabus=ctx["course"].get("syllabus", ""),
             outline=ctx["outline"],

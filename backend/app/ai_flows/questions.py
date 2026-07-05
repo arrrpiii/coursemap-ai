@@ -1,8 +1,7 @@
-"""LangGraph flow that generates questions for a node."""
+"""Generate exam-style questions for a single node."""
 
-from typing import List, TypedDict
+from typing import List
 
-from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
 from app.services.ai_service import generate_json
@@ -18,45 +17,6 @@ class QuestionItem(BaseModel):
 
 class QuestionsPayload(BaseModel):
     questions: List[QuestionItem]
-
-
-class FlowState(TypedDict, total=False):
-    prompt: str
-    payload: dict
-    error: str
-
-
-def prepare_input(state: FlowState) -> FlowState:
-    return state
-
-
-def call_gemini(state: FlowState) -> FlowState:
-    try:
-        model = generate_json(state.get("prompt", ""), QuestionsPayload)
-        return {**state, "payload": model.model_dump()}
-    except Exception as exc:  # noqa: BLE001
-        return {**state, "error": str(exc)}
-
-
-def validate_output(state: FlowState) -> FlowState:
-    if not state.get("payload"):
-        raise RuntimeError(state.get("error") or "Failed to generate questions")
-    return state
-
-
-def build_graph():
-    workflow = StateGraph(FlowState)
-    workflow.add_node("prepare_input", prepare_input)
-    workflow.add_node("call_gemini", call_gemini)
-    workflow.add_node("validate_output", validate_output)
-    workflow.set_entry_point("prepare_input")
-    workflow.add_edge("prepare_input", "call_gemini")
-    workflow.add_edge("call_gemini", "validate_output")
-    workflow.add_edge("validate_output", END)
-    return workflow.compile()
-
-
-_compiled = build_graph()
 
 
 QUESTIONS_PROMPT = """You are an exam question generator.
@@ -113,7 +73,7 @@ Rules:
 """
 
 
-def run_questions_flow(
+def generate_questions(
     *,
     course_title: str,
     syllabus: str,
@@ -125,6 +85,7 @@ def run_questions_flow(
     count: int,
     question_types: List[str],
 ) -> dict:
+    """Return a dict ``{"questions": [...]}`` matching QuestionsPayload."""
     prompt = QUESTIONS_PROMPT.format(
         course_title=course_title,
         syllabus=syllabus,
@@ -136,5 +97,5 @@ def run_questions_flow(
         count=count,
         question_types=", ".join(question_types),
     )
-    result = _compiled.invoke({"prompt": prompt})
-    return result.get("payload") or {"questions": []}
+    model = generate_json(prompt, QuestionsPayload)
+    return model.model_dump()

@@ -3,7 +3,6 @@ uvicorn
 motor
 pydantic
 python-dotenv
-langgraph
-langchain-google-genai
+google-genai
 bcrypt
 pyjwt
