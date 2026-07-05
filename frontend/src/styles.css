@@ -1165,11 +1165,12 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-family: v
   border-color: var(--cyan);
   /* Flat — same drop shadow as regular nodes, with a soft static glow ring.
      The previous node-pulse animation (cyan → purple hue cycling) was
-     removed per user request. */
+     removed per user request. Glow is amber to match the root node's
+     pending-status palette. */
   box-shadow:
     0 6px 14px rgba(0, 0, 0, 0.55),
-    0 0 20px rgba(0, 243, 255, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    0 0 20px rgba(255, 181, 71, 0.35),
+    0 0 0 1px rgba(255, 181, 71, 0.18) inset;
   animation: node-fade-in 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @keyframes node-fade-in {
