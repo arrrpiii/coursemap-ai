@@ -76,27 +76,28 @@ export default function NodeWorkspacePage() {
             {node.status && <StatusBadge status={node.status} />}
           </p>
         </div>
-        <div className="row">
-          {node.status && (
-            <>
-              <label style={{ marginBottom: 0 }}>Status</label>
-              <StatusSelect
-                value={node.status}
-                onChange={handleStatusChange}
-                disabled={updatingStatus}
-              />
-            </>
-          )}
-          <motion.button
-            type="button"
-            className="primary"
-            onClick={() => navigate(`/course/${courseId}/node/${nodeId}/questions`)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Generate questions →
-          </motion.button>
-        </div>
+      </div>
+
+      <div className="workspace-actions">
+        {node.status && (
+          <div className="status-group">
+            <label>Status</label>
+            <StatusSelect
+              value={node.status}
+              onChange={handleStatusChange}
+              disabled={updatingStatus}
+            />
+          </div>
+        )}
+        <motion.button
+          type="button"
+          className="primary"
+          onClick={() => navigate(`/course/${courseId}/node/${nodeId}/questions`)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          Generate questions →
+        </motion.button>
       </div>
 
       <motion.div

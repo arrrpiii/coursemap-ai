@@ -1530,6 +1530,23 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-family: v
 
 /* ---------- Utility ---------- */
 .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* Node workspace: status on the left, primary action on the right
+   (consistent regardless of how long the title above is). */
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.workspace-actions .status-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.workspace-actions label { margin-bottom: 0; }
 .muted { color: var(--text-faint); }
 .danger-text { color: var(--red); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
 
