@@ -1,5 +1,3 @@
-"""Per-node chat HTTP routes (history + send + clear). Auth required."""
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -28,6 +26,7 @@ class ChatHistoryResponse(BaseModel):
 
 
 async def _load_context(db, course_id: str, node_id: str, user_id):
+    """Load course + node + outline for the chat context."""
     course = await course_service.get_course(db, course_id, user_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -41,7 +40,6 @@ async def _load_context(db, course_id: str, node_id: str, user_id):
     if not node:
         raise HTTPException(status_code=404, detail="Node not found")
 
-    parent = None
     parent_title = ""
     if node.get("parentId"):
         parent = await node_service.get_parent_node(db, node["parentId"])
@@ -66,10 +64,10 @@ async def get_chat_history(
     node_id: str,
     current_user: dict = Depends(get_current_user),
 ):
+    """Return the full chat history for a node, oldest first."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
 
-    # Verify the user owns this course before returning chat history.
     course = await course_service.get_course(db, course_id, user_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -89,21 +87,18 @@ async def send_chat_message(
     payload: ChatSendRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    """Send a user message; persist it, get a Gemini reply with full transcript context, return the assistant turn."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     ctx = await _load_context(db, course_id, node_id, user_id)
 
     user_text = payload.message.strip()
 
-    # Persist the user's turn first so it shows up even if the model call fails.
     await chat_service.add_chat_message(
         db, ctx["course_oid"], ctx["node_oid"], "user", user_text
     )
 
-    # Build history for the prompt (existing transcript including the turn we just added).
     history = await chat_service.get_chat_history(db, ctx["course_oid"], ctx["node_oid"])
-    # The "history" param should not include the brand-new user message; the prompt
-    # already renders it as the latest question. Strip the last one if it matches.
     prompt_history = list(history)
     if prompt_history and prompt_history[-1].get("role") == "user" and \
        prompt_history[-1].get("content") == user_text and len(prompt_history) > 1:
@@ -136,6 +131,7 @@ async def clear_chat(
     node_id: str,
     current_user: dict = Depends(get_current_user),
 ):
+    """Delete all chat messages for a node. Returns the number of messages removed."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     course = await course_service.get_course(db, course_id, user_id)

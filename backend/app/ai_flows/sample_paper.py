@@ -1,5 +1,3 @@
-"""Generate a full-course sample question paper."""
-
 from typing import List
 
 from pydantic import BaseModel
@@ -95,7 +93,7 @@ def generate_sample_paper(
     difficulty: str,
     include_answers: bool,
 ) -> dict:
-    """Return a dict matching SamplePaperPayload (title, duration, marks, sections)."""
+    """Ask Gemini for a full-course sample paper; return the validated payload (title, duration, marks, sections)."""
     prompt = SAMPLE_PAPER_PROMPT.format(
         course_title=course_title,
         syllabus=syllabus,

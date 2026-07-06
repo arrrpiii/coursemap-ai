@@ -1,5 +1,3 @@
-"""Course-related HTTP routes (auth required)."""
-
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
@@ -16,6 +14,7 @@ async def create_course(
     payload: CourseCreateRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    """Create a course, generate its 3-level topic tree via Gemini, return the full tree."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     course_oid, _course_doc = await course_service.create_course(
@@ -41,6 +40,7 @@ async def create_course(
 
 @router.get("")
 async def list_courses(current_user: dict = Depends(get_current_user)):
+    """List all courses owned by the authenticated user."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     return await course_service.list_courses(db, user_id)
@@ -51,6 +51,7 @@ async def get_course_tree(
     course_id: str,
     current_user: dict = Depends(get_current_user),
 ):
+    """Return the nested topic/subtopic tree for a course."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     result = await course_service.get_course_tree(db, course_id, user_id)
@@ -64,6 +65,7 @@ async def delete_course(
     course_id: str,
     current_user: dict = Depends(get_current_user),
 ):
+    """Delete a course and all its nodes, chat, and AI outputs."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     deleted = await course_service.delete_course(db, course_id, user_id)

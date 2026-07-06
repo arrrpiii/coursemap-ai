@@ -1,5 +1,3 @@
-"""Generate exam-style questions for a single node."""
-
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -85,7 +83,7 @@ def generate_questions(
     count: int,
     question_types: List[str],
 ) -> dict:
-    """Return a dict ``{"questions": [...]}`` matching QuestionsPayload."""
+    """Ask Gemini for a list of exam questions for a node; return {questions: [...]} validated against QuestionsPayload."""
     prompt = QUESTIONS_PROMPT.format(
         course_title=course_title,
         syllabus=syllabus,

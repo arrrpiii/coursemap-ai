@@ -1,9 +1,3 @@
-"""Pydantic models for authentication endpoints.
-
-Kept minimal — no email-validator dependency. We rely on a lightweight
-regex check in the route layer for a basic email-shape guard.
-"""
-
 from datetime import datetime
 from typing import Optional
 

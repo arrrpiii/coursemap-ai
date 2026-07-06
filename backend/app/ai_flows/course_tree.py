@@ -1,5 +1,3 @@
-"""Generate a 3-level course tree (course → topics → subtopics)."""
-
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -52,8 +50,7 @@ Rules:
 
 
 def generate_course_tree(course_title: str, syllabus: str) -> dict:
-    """Build a course tree from a title + syllabus. Returns a dict matching
-    ``CourseTreePayload`` (courseTitle + topics[].title/subtopics)."""
+    """Ask Gemini to turn a title + syllabus into a 3-level topic tree; return the validated payload as a dict."""
     prompt = COURSE_TREE_PROMPT.format(
         course_title=course_title,
         syllabus=syllabus,

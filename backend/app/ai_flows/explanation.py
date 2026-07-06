@@ -1,5 +1,3 @@
-"""Explain a single course node using the full syllabus + outline + history."""
-
 from app.services.ai_service import generate_text
 
 
@@ -47,7 +45,7 @@ Instructions:
 
 
 def _format_history(history: list) -> str:
-    """Render prior messages into a readable transcript for the prompt."""
+    """Render prior chat messages into a transcript block for the prompt."""
     if not history:
         return "(no prior conversation — this is the first turn)"
     lines = []
@@ -72,7 +70,7 @@ def explain_node(
     user_query: str,
     history: list | None = None,
 ) -> str:
-    """Return a free-text explanation of a node. Empty string on failure."""
+    """Ask Gemini to explain a node using full syllabus + outline + chat history; return its text answer."""
     prompt = EXPLANATION_PROMPT.format(
         course_title=course_title,
         syllabus=syllabus,

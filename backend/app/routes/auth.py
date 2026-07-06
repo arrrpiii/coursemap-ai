@@ -1,5 +1,3 @@
-"""Authentication HTTP routes: register, login, me."""
-
 import re
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -17,7 +15,6 @@ from app.services import auth_service
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-# Lightweight email-shape check. Good enough to catch typos; not RFC 5322.
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -26,11 +23,20 @@ def _validate_email_shape(email: str) -> None:
         raise HTTPException(status_code=400, detail="Invalid email format")
 
 
+def _user_response(user: dict) -> UserResponse:
+    return UserResponse(
+        id=str(user["_id"]) if "_id" in user else user.get("id"),
+        email=user.get("email", ""),
+        name=user.get("name"),
+        createdAt=user.get("createdAt"),
+    )
+
+
 async def get_current_user(
     authorization: str | None = Header(default=None),
     db=Depends(get_db),
 ):
-    """FastAPI dependency: extracts and validates the Bearer token."""
+    """Bearer-token dependency: validates the JWT, returns the user document."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = authorization[len("Bearer ") :].strip()
@@ -51,17 +57,9 @@ async def get_current_user(
     return user
 
 
-def _user_response(user: dict) -> UserResponse:
-    return UserResponse(
-        id=str(user["_id"]) if "_id" in user else user.get("id"),
-        email=user.get("email", ""),
-        name=user.get("name"),
-        createdAt=user.get("createdAt"),
-    )
-
-
 @router.post("/register", response_model=TokenResponse)
 async def register(payload: RegisterRequest):
+    """Create a new user account and return a JWT access token."""
     email = payload.email.strip().lower()
     _validate_email_shape(email)
     db = get_db()
@@ -69,7 +67,6 @@ async def register(payload: RegisterRequest):
     if existing:
         raise HTTPException(status_code=400, detail="Email is already registered")
 
-    # First user registration wipes the pre-auth data collections.
     await auth_service.wipe_data_collections_if_first_user(db)
 
     user = await auth_service.create_user(
@@ -84,6 +81,7 @@ async def register(payload: RegisterRequest):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: LoginRequest):
+    """Verify credentials and return a JWT access token."""
     email = payload.email.strip().lower()
     db = get_db()
     user, err = await auth_service.authenticate_user(
@@ -100,4 +98,5 @@ async def login(payload: LoginRequest):
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: dict = Depends(get_current_user)):
+    """Return the user document for the currently authenticated user."""
     return _user_response(current_user)

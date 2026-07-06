@@ -1,21 +1,3 @@
-"""Gemini (gemini-2.5-flash) client used by all AI flows.
-
-Calls the Google GenAI SDK directly — no LangGraph, no LangChain. Each
-flow module builds its own prompt and calls ``generate_text`` or
-``generate_json``; nothing more.
-
-Auth: see ``app.config`` for the two supported modes (public Gemini API
-vs. Vertex AI Express). ``_get_client`` picks the right one.
-
-Exposes two reusable entry points:
-    generate_text(prompt) -> str
-    generate_json(prompt, schema) -> BaseModel
-
-The JSON helper forces ``response_mime_type="application/json"`` so the
-model emits parseable JSON, and retries with a correction prompt when
-Pydantic validation still fails.
-"""
-
 import json
 import logging
 import os
@@ -34,41 +16,28 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class LLMUnavailable(Exception):
-    """Raised when Gemini can't fulfill the request (missing key, network
-    error, timeout, safety refusal, malformed response, etc.)."""
+    """Raised when Gemini can't fulfill the request (network, timeout, malformed, etc.)."""
 
-
-# ---------- shared SDK client ----------
 
 _client: genai.Client | None = None
 
 
 def _get_client() -> genai.Client:
-    """Build (and cache) the Google GenAI client.
-
-    See ``app.config`` for the two supported auth modes.
-    """
+    """Build (and cache) the Google GenAI client in either public or Vertex Express mode."""
     global _client
     if _client is not None:
         return _client
 
     if not settings.GEMINI_API_KEY:
         raise LLMUnavailable(
-            "GEMINI_API_KEY is not set. Add it to backend/.env and restart. "
-            "If your key starts with 'AQ.', also set GEMINI_USE_VERTEX=true "
-            "and GEMINI_PROJECT=<your project number>."
+            "GEMINI_API_KEY is not set. Add it to backend/.env and restart."
         )
 
     if settings.GEMINI_USE_VERTEX:
         if not settings.GEMINI_PROJECT:
             raise LLMUnavailable(
-                "GEMINI_USE_VERTEX=true but GEMINI_PROJECT is empty. "
-                "Set it to the numeric project id from AI Studio "
-                "(e.g. 835283834241) in backend/.env and restart."
+                "GEMINI_USE_VERTEX=true but GEMINI_PROJECT is empty."
             )
-        # SDK reads the API key from the env, not the constructor,
-        # in Vertex mode ("project/location and API key are mutually
-        # exclusive in the client initializer").
         os.environ["GOOGLE_API_KEY"] = settings.GEMINI_API_KEY
         _client = genai.Client(
             vertexai=True,
@@ -88,16 +57,7 @@ def _call_gemini_raw(
     temperature: float = 0.0,
     timeout: float = 60.0,
 ) -> str:
-    """Call Gemini and return the model's text.
-
-    Set ``response_mime_type="application/json"`` for structured outputs —
-    the SDK then guarantees parseable JSON, which dramatically reduces
-    the need for downstream retries. Raises ``LLMUnavailable`` on any
-    error the caller can act on.
-
-    Note: ``timeout`` is NOT a field of ``GenerateContentConfig`` in the
-    google-genai SDK — it lives on ``HttpOptions`` instead.
-    """
+    """Send a prompt to Gemini and return the model's raw text response."""
     try:
         client = _get_client()
         config_kwargs: dict = {
@@ -113,26 +73,22 @@ def _call_gemini_raw(
         )
     except LLMUnavailable:
         raise
-    except Exception as exc:  # network / SDK / auth / timeout etc.
+    except Exception as exc:
         msg = str(exc) or exc.__class__.__name__
         raise LLMUnavailable(
-            f"Gemini request failed: {msg}. "
-            f"Check GEMINI_API_KEY and your network connection."
+            f"Gemini request failed: {msg}. Check GEMINI_API_KEY and your network connection."
         ) from exc
 
     text = (getattr(response, "text", None) or "").strip()
     if not text:
         raise LLMUnavailable(
-            "Gemini returned an empty response. The model may be temporarily "
-            "overloaded — try again in a moment."
+            "Gemini returned an empty response. The model may be temporarily overloaded."
         )
     return text
 
 
-# ---------- public helpers ----------
-
 def generate_text(prompt: str) -> str:
-    """Call Gemini and return plain text output."""
+    """Call Gemini and return plain text output (no JSON)."""
     return _call_gemini_raw(prompt)
 
 
@@ -147,7 +103,7 @@ def _preview(text, limit: int = 200) -> str:
 
 
 def _strip_fences(text: str) -> str:
-    """Remove Markdown code fences and surrounding noise from model output."""
+    """Remove Markdown code fences from a model response."""
     if not text:
         return text
     text = text.strip()
@@ -163,12 +119,7 @@ def generate_json(
     *,
     max_retries: int = 2,
 ) -> T:
-    """Call Gemini, parse JSON, validate against a Pydantic schema.
-
-    Forces ``response_mime_type="application/json"`` so the SDK returns
-    strict JSON. Retries with a correction prompt if validation still
-    fails (model hallucination, schema drift, etc.).
-    """
+    """Call Gemini with JSON-output mode, parse, validate against a Pydantic schema, retry on failure."""
     last_error: Exception | None = None
     last_raw = ""
     current_prompt = prompt
@@ -211,8 +162,6 @@ def generate_json(
     )
 
 
-# ---------- persistence ----------
-
 async def store_ai_output(
     db,
     *,
@@ -222,7 +171,7 @@ async def store_ai_output(
     content,
     metadata: dict | None = None,
 ) -> str:
-    """Persist an AI output and return the new document id."""
+    """Persist an AI output (explanation, questions, sample paper) and return the new id."""
     from app.utils import utcnow  # local import to avoid cycles
 
     doc = {

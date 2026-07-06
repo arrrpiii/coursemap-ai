@@ -1,7 +1,3 @@
-"""AI generation routes: explain, questions, sample paper. Auth required."""
-
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
@@ -23,7 +19,7 @@ router = APIRouter(prefix="/api/courses", tags=["ai"])
 
 
 async def _load_node_context(db, course_id: str, node_id: str, user_id):
-    """Load everything needed to make a context-aware AI request for a node."""
+    """Load course + node + parent + outline for a context-aware AI request."""
     course = await course_service.get_course(db, course_id, user_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -64,6 +60,7 @@ async def explain_node(
     payload: ExplainRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    """Ask Gemini to explain a node, scoped to the full syllabus and outline."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
     ctx = await _load_node_context(db, course_id, node_id, user_id)
@@ -100,6 +97,7 @@ async def generate_questions(
     payload: QuestionsRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    """Generate exam questions for a node at a chosen difficulty and type mix."""
     if payload.difficulty not in VALID_DIFFICULTIES:
         raise HTTPException(
             status_code=400,
@@ -155,12 +153,7 @@ async def list_previous_questions(
     limit: int = 20,
     current_user: dict = Depends(get_current_user),
 ):
-    """Return previously generated question sets for a node, newest first.
-
-    Each entry's ``content`` is ``{"questions": [...]}`` and ``metadata``
-    holds the settings used at generation time (difficulty, count,
-    questionTypes).
-    """
+    """Return previously generated question sets for a node, newest first."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
 
@@ -190,6 +183,7 @@ async def generate_sample_paper(
     payload: SamplePaperRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    """Generate a full-course sample paper with marks, duration, and optional answers."""
     if payload.difficulty not in VALID_DIFFICULTIES:
         raise HTTPException(
             status_code=400,
@@ -203,7 +197,6 @@ async def generate_sample_paper(
         raise HTTPException(status_code=404, detail="Course not found")
 
     course_oid = to_object_id(course_id)
-    tree = await course_service.get_course_tree(db, course_id, user_id)
     outline = await course_service.get_course_outline_text(db, course_oid)
 
     try:
@@ -248,12 +241,7 @@ async def list_previous_sample_papers(
     limit: int = 20,
     current_user: dict = Depends(get_current_user),
 ):
-    """Return previously generated sample papers for a course, newest first.
-
-    Each entry's ``content`` is the full paper payload (title, sections,
-    questions, answers). ``metadata`` holds the settings used at
-    generation time (totalMarks, durationMinutes, difficulty, includeAnswers).
-    """
+    """Return previously generated sample papers for a course, newest first."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
 

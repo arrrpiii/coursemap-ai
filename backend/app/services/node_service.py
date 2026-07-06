@@ -1,11 +1,10 @@
-"""Node persistence helpers (notes removed)."""
-
 from typing import Optional
 
 from app.utils import serialize_doc, to_object_id, utcnow
 
 
 async def get_node(db, course_id: str, node_id: str) -> Optional[dict]:
+    """Return a course node by (courseId, _id), or None."""
     course_oid = to_object_id(course_id)
     node_oid = to_object_id(node_id)
     if course_oid is None or node_oid is None:
@@ -17,6 +16,7 @@ async def get_node(db, course_id: str, node_id: str) -> Optional[dict]:
 
 
 async def get_parent_node(db, parent_id: str) -> Optional[dict]:
+    """Return a parent node by id (used to walk up the topic tree), or None."""
     oid = to_object_id(parent_id)
     if oid is None:
         return None
@@ -25,7 +25,7 @@ async def get_parent_node(db, parent_id: str) -> Optional[dict]:
 
 
 async def get_recent_outputs(db, course_id, node_id, limit: int = 20) -> list:
-    """Return recent AI outputs (explanations / questions) for this node."""
+    """Return recent AI outputs for this node (explanations, questions), newest first."""
     cursor = (
         db.ai_outputs.find({"courseId": course_id, "nodeId": node_id})
         .sort("createdAt", -1)
@@ -35,6 +35,7 @@ async def get_recent_outputs(db, course_id, node_id, limit: int = 20) -> list:
 
 
 async def update_node_status(db, course_id, node_id, status: str) -> Optional[dict]:
+    """Set a node's progress status and return the updated document (or None if not found)."""
     result = await db.course_nodes.find_one_and_update(
         {"_id": node_id, "courseId": course_id},
         {"$set": {"status": status, "updatedAt": utcnow()}},

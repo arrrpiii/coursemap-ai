@@ -1,5 +1,3 @@
-"""Node workspace and status HTTP routes (auth required)."""
-
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
@@ -20,6 +18,7 @@ async def get_node_workspace(
     node_id: str,
     current_user: dict = Depends(get_current_user),
 ):
+    """Return a node's workspace: the node, its parent, and its recent AI outputs."""
     db = get_db()
     user_id = current_user["_id"] if "_id" in current_user else current_user["id"]
 
@@ -57,6 +56,7 @@ async def update_status(
     payload: NodeStatusUpdate,
     current_user: dict = Depends(get_current_user),
 ):
+    """Update a node's progress status (pending | learning | completed)."""
     if payload.status not in VALID_STATUSES:
         raise HTTPException(
             status_code=400,

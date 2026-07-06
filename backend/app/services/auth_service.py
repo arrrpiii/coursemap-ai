@@ -1,5 +1,3 @@
-"""Authentication service: password hashing, JWT signing, user CRUD."""
-
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
@@ -11,23 +9,22 @@ from app.config import settings
 from app.utils import serialize_doc, utcnow
 
 
-# ---------- Password helpers ----------
-
 def hash_password(password: str) -> str:
+    """Hash a plaintext password with bcrypt."""
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
 def verify_password(password: str, hashed: str) -> bool:
+    """Constant-time bcrypt check; returns False on any decode/hash error."""
     try:
         return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
     except Exception:
         return False
 
 
-# ---------- JWT helpers ----------
-
 def create_access_token(user_id: str, email: str) -> str:
+    """Sign a short-lived JWT carrying the user id (sub) and email."""
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
@@ -43,14 +40,14 @@ def decode_access_token(token: str) -> dict:
     return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
 
 
-# ---------- User CRUD ----------
-
 async def find_user_by_email(db, email: str) -> Optional[dict]:
+    """Look up a user by lowercased email."""
     doc = await db.users.find_one({"email": email.lower().strip()})
     return serialize_doc(doc) if doc else None
 
 
 async def find_user_by_id(db, user_id: str) -> Optional[dict]:
+    """Look up a user by ObjectId."""
     oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else None
     if oid is None:
         return None
@@ -59,6 +56,7 @@ async def find_user_by_id(db, user_id: str) -> Optional[dict]:
 
 
 async def create_user(db, email: str, password: str, name: str) -> dict:
+    """Insert a new user with a bcrypt-hashed password; return the serialized document."""
     now = utcnow()
     doc = {
         "email": email.lower().strip(),
@@ -84,16 +82,11 @@ async def authenticate_user(
     return user, None
 
 
-# ---------- First-user data wipe ----------
-
 DATA_COLLECTIONS = ("courses", "course_nodes", "chat_messages", "ai_outputs", "node_notes")
 
 
 async def wipe_data_collections_if_first_user(db) -> bool:
-    """Drop the data collections on the very first registration.
-
-    Returns True if a wipe happened.
-    """
+    """Drop the data collections on the very first registration. Returns True if a wipe happened."""
     user_count = await db.users.count_documents({})
     if user_count > 0:
         return False
@@ -101,6 +94,5 @@ async def wipe_data_collections_if_first_user(db) -> bool:
         try:
             await db.drop_collection(name)
         except Exception:
-            # Collection may not exist yet — that's fine
             pass
     return True

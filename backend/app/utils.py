@@ -1,5 +1,3 @@
-"""Shared utility helpers for serializing documents and building trees."""
-
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
@@ -11,7 +9,6 @@ def utcnow() -> datetime:
 
 
 def to_object_id(value: str | ObjectId | None) -> ObjectId | None:
-    """Convert a string id to ObjectId when possible, otherwise return None."""
     if value is None:
         return None
     if isinstance(value, ObjectId):
@@ -25,7 +22,6 @@ def to_object_id(value: str | ObjectId | None) -> ObjectId | None:
 
 
 def serialize(value: Any) -> Any:
-    """Recursively convert ObjectId and datetime values to JSON-friendly types."""
     if isinstance(value, ObjectId):
         return str(value)
     if isinstance(value, datetime):
@@ -38,7 +34,6 @@ def serialize(value: Any) -> Any:
 
 
 def serialize_doc(doc: dict | None) -> dict | None:
-    """Serialize a Mongo document and expose `_id` as `id` for clients."""
     if doc is None:
         return None
     out = serialize(doc)
@@ -48,10 +43,6 @@ def serialize_doc(doc: dict | None) -> dict | None:
 
 
 def build_tree(nodes: Iterable[dict], root_id: ObjectId) -> dict | None:
-    """Build a nested tree from a flat list of course_nodes documents.
-
-    Each node is expected to have: _id, parentId, title, type, status, order.
-    """
     nodes_list = list(nodes)
     by_parent: dict[str | None, list[dict]] = {}
     for node in nodes_list:

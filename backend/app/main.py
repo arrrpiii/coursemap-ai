@@ -1,5 +1,3 @@
-"""FastAPI application entry point for CourseMap AI."""
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,7 +14,6 @@ from app.routes import nodes as node_routes
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Warm the database connection so failures surface at startup
     get_db()
     yield
     await close_db()
@@ -35,6 +32,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 async def health():
+    """Liveness endpoint — returns ok when the app is reachable."""
     return {"status": "ok"}
 
 

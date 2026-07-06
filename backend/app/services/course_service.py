@@ -1,15 +1,10 @@
-"""Course and tree persistence helpers."""
-
 from typing import Any, List, Optional
 
 from app.utils import build_tree, serialize_doc, to_object_id, utcnow
 
 
 async def create_course(db, title: str, syllabus: str, user_id):
-    """Insert a course document and return (raw_id, serialized_dict).
-
-    `user_id` is the ObjectId of the owning user.
-    """
+    """Insert a course document and return (raw_id, serialized_dict)."""
     now = utcnow()
     doc = {
         "userId": user_id,
@@ -24,13 +19,13 @@ async def create_course(db, title: str, syllabus: str, user_id):
 
 
 async def list_courses(db, user_id) -> List[dict]:
-    """Return all courses owned by `user_id`, most recent first."""
+    """Return all courses owned by user_id, most recent first."""
     cursor = db.courses.find({"userId": user_id}).sort("createdAt", -1)
     return [serialize_doc(doc) async for doc in cursor]
 
 
 async def get_course(db, course_id: str, user_id=None) -> Optional[dict]:
-    """Fetch a course by id. If `user_id` is provided, only return if owned by them."""
+    """Fetch a course by id. If user_id is provided, only return if owned by them."""
     oid = to_object_id(course_id)
     if oid is None:
         return None
@@ -42,10 +37,7 @@ async def get_course(db, course_id: str, user_id=None) -> Optional[dict]:
 
 
 async def get_course_tree(db, course_id: str, user_id=None) -> Optional[dict]:
-    """Return the nested tree for a course, or None if course not found.
-
-    When `user_id` is supplied, the course must be owned by that user.
-    """
+    """Return the nested topic/subtopic tree for a course, or None if not found."""
     course = await get_course(db, course_id, user_id)
     if not course:
         return None
@@ -62,15 +54,7 @@ async def get_course_tree(db, course_id: str, user_id=None) -> Optional[dict]:
 
 
 async def get_course_outline_text(db, course_id) -> str:
-    """Return a flat text outline of all topics + subtopics for AI context.
-
-    Example output:
-        1. Topic A
-            1.1 Subtopic A.1
-            1.2 Subtopic A.2
-        2. Topic B
-            2.1 Subtopic B.1
-    """
+    """Return a flat text outline (1. Topic / 1.1 Subtopic) for AI context."""
     oid = to_object_id(course_id)
     if oid is None:
         return ""
@@ -107,6 +91,7 @@ async def create_root_node(db, course_id, title: str) -> Any:
 
 
 async def create_topic_node(db, course_id, parent_id, title: str, order: int) -> Any:
+    """Insert a topic node under a parent and return its ObjectId."""
     now = utcnow()
     doc = {
         "courseId": course_id,
@@ -125,6 +110,7 @@ async def create_topic_node(db, course_id, parent_id, title: str, order: int) ->
 async def create_subtopic_node(
     db, course_id, parent_id, title: str, order: int
 ) -> Any:
+    """Insert a subtopic node under a topic and return its ObjectId."""
     now = utcnow()
     doc = {
         "courseId": course_id,
@@ -141,10 +127,7 @@ async def create_subtopic_node(
 
 
 async def save_generated_tree(db, course_id, root_id, topics) -> None:
-    """Persist topics and subtopics returned by the LangGraph course tree flow.
-
-    `topics` is a list of {"title": str, "subtopics": [str, ...]}.
-    """
+    """Persist a list of {title, subtopics[]} produced by the Gemini course tree flow."""
     for order, topic in enumerate(topics):
         title = (topic.get("title") or "").strip()
         if not title:
@@ -161,10 +144,7 @@ async def save_generated_tree(db, course_id, root_id, topics) -> None:
 
 
 async def delete_course(db, course_id: str, user_id) -> bool:
-    """Cascade-delete a course and every related node / chat / AI output.
-
-    Only deletes courses owned by `user_id`. Returns True on success.
-    """
+    """Cascade-delete a course and all its nodes/chat/AI outputs (owner-only)."""
     oid = to_object_id(course_id)
     if oid is None:
         return False

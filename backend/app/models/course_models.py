@@ -1,5 +1,3 @@
-"""Pydantic models for course and tree payloads."""
-
 from datetime import datetime
 from typing import List, Optional
 
