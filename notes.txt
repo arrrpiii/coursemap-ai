@@ -1,3 +1,0 @@
-re run the .venv
-install requirements
-run: database -> backend -> frontend

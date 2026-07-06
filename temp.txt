@@ -1,8 +1,0 @@
-
-i am getting this after some time when i click generate sample paper on /course/id/main/ 
-Sample paper generation failed: Gemini returned invalid JSON: Expecting value: line 1 column 1 (char 0) 
-
-when i press generate questoins on /course/id/node/id/questions then the questions are being generated properly but i also want to store them. add a card that expands on clicking that shows the previously asked questions
-
-saving the sample paper as well
-changing the default to hide the answers
